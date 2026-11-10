@@ -1,0 +1,375 @@
+{
+  "name": "Soporte tecnico - Proyecto segundo parcial",
+  "active": false,
+  "nodes": [
+    {
+      "id": "742cea3d-07aa-4208-b689-e40294ccfab6",
+      "name": "Ejecutar prueba",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "fb514684-4d4a-4090-be76-44d6d8b565bc",
+      "name": "Cada minuto",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7ba49231-d8ae-4c31-8c34-47aa06278b58",
+      "name": "Leer respuestas",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1RNyV_viqziJc0f8l4EJkTdX8pWTfoqcTr3Heh1NjSn8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "1513624241",
+          "mode": "id"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e75ad5a1-1f7d-4054-b158-08f69da061f2",
+      "name": "Solo sin correo enviado",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ad57c741-106b-4a62-83e9-eabb31d02588",
+              "leftValue": "={{ String($json['Correo enviado'] || '').trim().toLowerCase() !== 'true' }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "718df216-914c-40ab-bd8d-e802d4fe518a",
+      "name": "Recorrer solicitudes",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "769ca69e-109d-4536-bdaf-5761e24f8ec0",
+      "name": "Registrar en API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://soporte-tecnico-jonn.onrender.com/api/solicitudes",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {origen_id: JSON.stringify([$json['Marca temporal'],$json['Dirección de correo electrónico']]), nombre:$json.Nombre,correo:$json['Dirección de correo electrónico'],categoria:$json.Categoria,prioridad:$json.Prioridad,descripcion:$json.Descripcion} }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "36324666-0a39-4640-87d9-eb724418ce5d",
+      "name": "Guardar folio en Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1100,
+        200
+      ],
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1RNyV_viqziJc0f8l4EJkTdX8pWTfoqcTr3Heh1NjSn8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "1513624241",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Recorrer solicitudes').item.json.row_number }}",
+            "Folio": "={{ $json.folio }}",
+            "Procesado": "TRUE",
+            "Registrado en": "={{ $json.creado_en }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true
+            },
+            {
+              "id": "Folio",
+              "displayName": "Folio",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": false
+            },
+            {
+              "id": "Procesado",
+              "displayName": "Procesado",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": false
+            },
+            {
+              "id": "Registrado en",
+              "displayName": "Registrado en",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "80712946-72c7-4cb3-a2dc-313f13b3c56a",
+      "name": "Notificar folio por Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1320,
+        200
+      ],
+      "parameters": {
+        "sendTo": "={{ $('Registrar en API').item.json.correo }}",
+        "subject": "={{ 'Solicitud recibida - ' + $('Registrar en API').item.json.folio }}",
+        "emailType": "text",
+        "message": "={{ 'Tu solicitud de soporte fue registrada.\\nFolio: ' + $('Registrar en API').item.json.folio + '\\nCategoria: ' + $('Registrar en API').item.json.categoria + '\\nPrioridad: ' + $('Registrar en API').item.json.prioridad + '\\nEstado: Pendiente' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "c670055f-3e96-4250-b5aa-bdc1d900e74e",
+      "name": "Marcar correo enviado",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1540,
+        200
+      ],
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1RNyV_viqziJc0f8l4EJkTdX8pWTfoqcTr3Heh1NjSn8",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "1513624241",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Recorrer solicitudes').item.json.row_number }}",
+            "Correo enviado": "TRUE"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true
+            },
+            {
+              "id": "Correo enviado",
+              "displayName": "Correo enviado",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Ejecutar prueba": {
+      "main": [
+        [
+          {
+            "node": "Leer respuestas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cada minuto": {
+      "main": [
+        [
+          {
+            "node": "Leer respuestas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer respuestas": {
+      "main": [
+        [
+          {
+            "node": "Solo sin correo enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Solo sin correo enviado": {
+      "main": [
+        [
+          {
+            "node": "Recorrer solicitudes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recorrer solicitudes": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Registrar en API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar en API": {
+      "main": [
+        [
+          {
+            "node": "Guardar folio en Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar folio en Sheets": {
+      "main": [
+        [
+          {
+            "node": "Notificar folio por Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar folio por Gmail": {
+      "main": [
+        [
+          {
+            "node": "Marcar correo enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar correo enviado": {
+      "main": [
+        [
+          {
+            "node": "Recorrer solicitudes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Mexico_City"
+  }
+}
