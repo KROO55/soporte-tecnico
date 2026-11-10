@@ -1,0 +1,82 @@
+[
+  {
+    "method": "GET",
+    "path": "/health",
+    "status": 200,
+    "respuesta": {
+      "estado": "ok"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/api/solicitudes",
+    "status": 400,
+    "respuesta": {
+      "error": "Campo invalido: origen_id"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/api/solicitudes",
+    "status": 201,
+    "respuesta": {
+      "id": 1,
+      "folio": "ST-000001",
+      "nombre": "Usuario de prueba",
+      "correo": "prueba@example.com",
+      "categoria": "Hardware",
+      "prioridad": "Alta",
+      "descripcion": "Equipo de prueba no enciende",
+      "estado": "Pendiente",
+      "creado_en": "2026-11-10T14:04:10.971Z"
+    }
+  },
+  {
+    "method": "POST",
+    "path": "/api/solicitudes",
+    "status": 200,
+    "respuesta": {
+      "id": 1,
+      "folio": "ST-000001",
+      "nombre": "Usuario de prueba",
+      "correo": "prueba@example.com",
+      "categoria": "Hardware",
+      "prioridad": "Alta",
+      "descripcion": "Equipo de prueba no enciende",
+      "estado": "Pendiente",
+      "creado_en": "2026-11-10T14:04:10.971Z"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/solicitudes/1",
+    "status": 200,
+    "respuesta": {
+      "id": 1,
+      "folio": "ST-000001",
+      "nombre": "Usuario de prueba",
+      "correo": "prueba@example.com",
+      "categoria": "Hardware",
+      "prioridad": "Alta",
+      "descripcion": "Equipo de prueba no enciende",
+      "estado": "Pendiente",
+      "creado_en": "2026-11-10T14:04:10.971Z"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/solicitudes/99999",
+    "status": 404,
+    "respuesta": {
+      "error": "Solicitud no encontrada"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/solicitudes/abc",
+    "status": 400,
+    "respuesta": {
+      "error": "ID invalido"
+    }
+  }
+]
